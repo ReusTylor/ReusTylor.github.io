@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
+    <link rel="alternate icon" type="image/png" href="/img/favicon.png">
+    <title>Reus&#39;s Blog | Code</title>
+    
+<link rel="stylesheet" href="/css/reset.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+<link rel="stylesheet" href="/css/markdown.css">
+
+    
+<link rel="stylesheet" href="/css/fonts.css">
+
+<meta name="generator" content="Hexo 6.2.0"></head>
+    <body>
+        <div class="paper">
+            <div class="paper-main">
+                
+                    <div class="post-header">
+    <a class="logo" href="/">Reus&#39;s Blog</a>
+    <a class="go-home" href="/">
+        <svg width="8" height="14" viewBox="0 0 8 14">
+            <path d="M7 1L1 7l6 6" stroke="#000" stroke-width="2" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+</div>
+                
+                <div class="post-main">
+
+    
+        <div class="post-main-title">
+            CMU课程-Storage I(存储 I)
+        </div>
+        <div class="post-meta">
+            2022-06-07
+        </div>
+    
+
+    <div class="post-md">
+        <h1 id="存储"><a href="#存储" class="headerlink" title="存储"></a>存储</h1><h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><ol>
+<li><p>非易失性存储</p>
+<ul>
+<li>随机存取</li>
+<li>字节编址</li>
+</ul>
+</li>
+<li><p>易失性存储</p>
+<ul>
+<li>顺序存储</li>
+<li>按照块编址，读的时候必须整个块读进去然后进行解析，修改某一个字节的内容然后重新将整个块写进去。</li>
+</ul>
+</li>
+</ol>
+<p><img src="/2022/06/07/CMU%E8%AF%BE%E7%A8%8B-Storage-I-%E5%AD%98%E5%82%A8-I/Untitled.png" alt="Untitled"></p>
+<p>在本门课程中，内存代指DRAM，磁盘只带SSD，HDD或者网络存储。</p>
+<h2 id="随机存取-V-S-随机存取"><a href="#随机存取-V-S-随机存取" class="headerlink" title="随机存取 V.S 随机存取"></a>随机存取 V.S 随机存取</h2><p>DBMS希望最大化顺序存取。</p>
+<ul>
+<li>算法尝试减少对随机页的写入次数，以便于数据可以存储在连续的块中</li>
+</ul>
+<h2 id="Disk-oriented-DBMS-（面向硬盘的数据库管理系统）"><a href="#Disk-oriented-DBMS-（面向硬盘的数据库管理系统）" class="headerlink" title="Disk-oriented DBMS （面向硬盘的数据库管理系统）"></a>Disk-oriented DBMS （面向硬盘的数据库管理系统）</h2><p>大部分的数据库都是面向硬盘的数据库，对于面向内存的数据库：速度非常快，但是容易丢失，比如Redis。</p>
+<p><img src="/2022/06/07/CMU%E8%AF%BE%E7%A8%8B-Storage-I-%E5%AD%98%E5%82%A8-I/Untitled%201.png" alt="上图是面向磁盘的DBMS示意图，数据被组织成页或者块（Page），第一页是目录页，储存在Disk中，这里假设内存是空的，为了对数据进行操作，首先需要将数据读取到内存中，通过Buffer pool来限定内存的大小，同时数据库会通过一个执行引擎（Execution Engine）来进行查询，执行引擎向数据库发送请求特定的Page，内存从Disk中先读取Directory，然后通过Directory找到对应的Page，再从Disk中读取相应的Page放入内存中。"></p>
+<p>上图是面向磁盘的DBMS示意图，数据被组织成页或者块（Page），第一页是目录页，储存在Disk中，这里假设内存是空的，为了对数据进行操作，首先需要将数据读取到内存中，通过Buffer pool来限定内存的大小，同时数据库会通过一个执行引擎（Execution Engine）来进行查询，执行引擎向数据库发送请求特定的Page，内存从Disk中先读取Directory，然后通过Directory找到对应的Page，再从Disk中读取相应的Page放入内存中。</p>
+<blockquote>
+<p>虚拟内存</p>
+<p>为什么数据库需要自己管理内存而不是让操作系统来帮忙呢？</p>
+<pre><code>   实现虚拟内存的一种方法是使用mmap()，通过这种方法可以将文件的内容映射到进程的地址空间，进程在地址空间上读取，操作系统负责在磁盘和内存之间来回移动页面。如果mmap遇到page fault，那么进程会被阻塞。
+
+  mmap的另一个问题在于，对于只读的文件是友好的，但是当存在多个写者时，就变得相当复杂。存在一些方法可以解决这些问题。总的来说就是告诉OS，虚拟内存中有哪些可以卸载了，哪些不能卸载。
+</code></pre>
+</blockquote>
+<p>总的来说，我们希望数据库能够自己管理自己的内容。</p>
+<ul>
+<li>使用正确的顺序将脏页写回</li>
+<li>预先取出磁盘的数据</li>
+<li>缓冲池的替换策略</li>
+<li>线程&#x2F;进程安排</li>
+</ul>
+<aside>
+💡 OS is not your friend ！
+
+</aside>
+
+<h2 id="Database-storage-数据库存储"><a href="#Database-storage-数据库存储" class="headerlink" title="Database storage(数据库存储)"></a>Database storage(数据库存储)</h2><p><strong>两大关键问题</strong></p>
+<ol>
+<li><p>数据库中的数据在磁盘上是怎么表现的（静态的表现）</p>
+<ul>
+<li><p>File storage（文件存储）</p>
+<pre><code>   DBMS将一个数据库作为一个或者多个文件存储在磁盘上，通常在一个专有的格式中。OS并不知道文件的具体内容。
+</code></pre>
+<ul>
+<li>Storge Manager<ol>
+<li><p>Storge Manager负责维护数据库的文件。</p>
+<p> → 一些存储管理器能够自己调度读写操作，以改善页面的时空局部性。</p>
+</li>
+<li><p>将文件组织成页面的集合。</p>
+</li>
+</ol>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<ul>
+<li><p>Page layout（页面布局）</p>
+<p>  Page是一个固定大小的数据块。</p>
+<p>  每个页有固定的ID</p>
+<p>  有不同的解释</p>
+</li>
+</ul>
+<hr>
+<ul>
+<li>Tuple layout（元组布局）</li>
+</ul>
+</li>
+<li><p>如何管理数据从磁盘与内存之间的进出（动态的调度）</p>
+</li>
+</ol>
+
+    </div>
+
+</div>
+                <div class="footer">
+    <span>Copyright © 2022 Reus&#39;s Blog</span>
+    <span>Theme Designed By <a target="_blank" href="https://zheli.design/one-paper">pzh</a></span>
+</div>
+
+
+<link rel="stylesheet" href="/css/a11y-dark.min.css">
+
+
+<script src="/js/highlight.min.js"></script>
+
+
+<script src="/js/highlightjs-line-numbers.js"></script>
+
+
+<script>
+    hljs.initHighlightingOnLoad();
+    hljs.initLineNumbersOnLoad();
+</script>
+
+            </div>
+        </div>
+    </body>
+</html>
